@@ -1,0 +1,14 @@
+{
+  "name": "ChronoCalc — Calcul de temps",
+  "short_name": "ChronoCalc",
+  "description": "Calculateur de date et d'heure utilisable hors ligne.",
+  "lang": "fr-FR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0e1422",
+  "theme_color": "#172033",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

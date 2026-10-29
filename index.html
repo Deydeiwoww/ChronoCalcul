@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#172033">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ChronoCalc">
+  <meta name="description" content="Calculateur de date et d'heure, utilisable hors ligne.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>ChronoCalc</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0e1422; --panel:#182237; --panel2:#202d45; --text:#f5f7fb; --muted:#aebbd0; --accent:#9fc5ff; --border:#33425d; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:radial-gradient(ellipse at top,#1b2a46 0%,var(--bg) 55%); color:var(--text); padding:calc(20px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); }
+    main { max-width:480px; margin:0 auto; }
+    header { text-align:center; margin:8px 0 26px; }
+    .logo { width:62px;height:62px; margin:0 auto 12px; display:grid;place-items:center;background:#2a3b5b;border:1px solid #496184;border-radius:20px;font-size:30px;box-shadow:0 8px 24px #0003; }
+    h1 { font-size:28px; margin:0; letter-spacing:-.7px; }
+    header p { color:var(--muted); margin:6px 0 0; font-size:14px; }
+    .tabs { display:grid;grid-template-columns:1fr 1fr; gap:8px; padding:5px; background:#111a2a; border:1px solid var(--border); border-radius:16px; margin-bottom:18px; }
+    .tab { border:0; border-radius:11px; padding:13px 8px; background:transparent; color:var(--muted); font-size:15px; font-weight:650; }
+    .tab.active { background:#dce9ff; color:#172033; }
+    .card { background:linear-gradient(160deg,#1b2740,#151f32); border:1px solid var(--border); border-radius:20px; padding:18px; margin-bottom:14px; box-shadow:0 12px 28px #0002; }
+    label,.label { display:block; font-size:13px; font-weight:650; color:var(--muted); margin-bottom:8px; }
+    .duration { display:grid; grid-template-columns:1fr 132px; gap:10px; }
+    input,select { width:100%; min-height:50px; border-radius:12px; border:1px solid #41516e; background:#0f192a; color:var(--text); padding:0 13px; font:inherit; font-size:17px; outline:none; }
+    input:focus,select:focus { border-color:var(--accent); box-shadow:0 0 0 3px #9fc5ff22; }
+    .quick { display:flex; flex-wrap:wrap; gap:7px; margin-top:11px; }
+    .chip { border:1px solid #405170; background:#202d45; color:#dce7fa; padding:8px 11px; border-radius:999px; font-size:13px; }
+    .choices { display:grid; gap:9px; }
+    .choice { display:flex; align-items:center; gap:10px; border:1px solid #3a4965; border-radius:13px; padding:12px; background:#111b2c; color:var(--text); font-size:15px; }
+    .choice input { width:18px; min-height:18px; accent-color:#9fc5ff; }
+    .custom-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+    .primary { width:100%; border:0; border-radius:14px; min-height:54px; background:#dce9ff; color:#172033; font-size:17px; font-weight:750; margin-top:16px; }
+    .result { display:none; }
+    .result.show { display:block; }
+    .result .eyebrow { color:var(--muted); font-size:13px; margin-bottom:8px; }
+    .result-date { font-size:20px; font-weight:700; line-height:1.35; }
+    .result-time { font-size:38px; font-weight:800; letter-spacing:-1px; margin-top:5px; color:#b8d4ff; font-variant-numeric:tabular-nums; }
+    .result-meta { color:var(--muted); font-size:12px; margin-top:8px; }
+    .copy { width:100%; margin-top:15px; padding:13px; border-radius:12px; border:1px solid #516584; background:#243451; color:white; font-size:15px; font-weight:650; }
+    .error { display:none; color:#ffd1d1; font-size:13px; margin-top:10px; }
+    footer { text-align:center; color:#8f9db4; font-size:12px; padding:10px 12px; line-height:1.5; }
+    .hidden { display:none !important; }
+    @media (max-width:360px) { .duration { grid-template-columns:1fr 112px; } .result-time { font-size:34px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="logo" aria-hidden="true">◷</div>
+    <h1>ChronoCalc</h1>
+    <p>Calcul rapide de date et d’heure</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Type de calcul">
+    <button class="tab active" id="addTab" role="tab" aria-selected="true" type="button">＋ Ajouter</button>
+    <button class="tab" id="subTab" role="tab" aria-selected="false" type="button">− Déduire</button>
+  </div>
+
+  <section class="card">
+    <label for="amount">Durée à <span id="actionWord">ajouter</span></label>
+    <div class="duration">
+      <input id="amount" type="number" inputmode="decimal" min="0" step="any" value="608" aria-label="Durée">
+      <select id="unit" aria-label="Unité">
+        <option value="minutes">Minutes</option>
+        <option value="hours">Heures</option>
+        <option value="days">Jours</option>
+      </select>
+    </div>
+    <div class="quick" aria-label="Durées rapides">
+      <button class="chip" type="button" data-minutes="15">15 min</button>
+      <button class="chip" type="button" data-minutes="30">30 min</button>
+      <button class="chip" type="button" data-minutes="60">1 h</button>
+      <button class="chip" type="button" data-minutes="350">350 min</button>
+      <button class="chip" type="button" data-minutes="608">608 min</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="label">Point de départ</div>
+    <div class="choices">
+      <label class="choice"><input type="radio" name="start" value="now" checked> Maintenant (heure de l’iPhone)</label>
+      <label class="choice"><input type="radio" name="start" value="custom"> Choisir une date et une heure</label>
+    </div>
+    <div id="customFields" class="custom-fields hidden">
+      <div><label for="startDate">Date</label><input id="startDate" type="date"></div>
+      <div><label for="startTime">Heure</label><input id="startTime" type="time" step="1" value="14:44:00"></div>
+    </div>
+    <button id="calculate" class="primary" type="button">Calculer</button>
+    <div id="error" class="error" role="alert"></div>
+  </section>
+
+  <section id="result" class="card result" aria-live="polite">
+    <div class="eyebrow">Résultat exact</div>
+    <div id="resultDate" class="result-date"></div>
+    <div id="resultTime" class="result-time"></div>
+    <div id="resultMeta" class="result-meta"></div>
+    <button id="copy" class="copy" type="button">Copier le résultat</button>
+  </section>
+
+  <footer>Calculs effectués sur l’iPhone. Aucune connexion Internet nécessaire après installation.</footer>
+</main>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  let operation = 'add';
+  let lastResult = '';
+  const addTab = $('addTab'), subTab = $('subTab');
+  function setOperation(op) {
+    operation = op;
+    addTab.classList.toggle('active', op === 'add');
+    subTab.classList.toggle('active', op === 'subtract');
+    addTab.setAttribute('aria-selected', String(op === 'add'));
+    subTab.setAttribute('aria-selected', String(op === 'subtract'));
+    $('actionWord').textContent = op === 'add' ? 'ajouter' : 'déduire';
+    $('result').classList.remove('show');
+    $('error').style.display = 'none';
+  }
+  addTab.addEventListener('click', () => setOperation('add'));
+  subTab.addEventListener('click', () => setOperation('subtract'));
+
+  document.querySelectorAll('input[name="start"]').forEach(radio => {
+    radio.addEventListener('change', () => $('customFields').classList.toggle('hidden', radio.value !== 'custom' || !radio.checked));
+  });
+  // Set custom date to the current local date.
+  function localDateValue(d) {
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+  $('startDate').value = localDateValue(new Date());
+
+  document.querySelectorAll('[data-minutes]').forEach(btn => btn.addEventListener('click', () => {
+    $('amount').value = btn.dataset.minutes;
+    $('unit').value = 'minutes';
+    $('error').style.display = 'none';
+  }));
+
+  function calculate() {
+    const raw = $('amount').value.trim();
+    const amount = Number(raw);
+    const error = $('error');
+    error.style.display = 'none';
+    $('result').classList.remove('show');
+    if (raw === '' || !Number.isFinite(amount) || amount < 0) {
+      error.textContent = 'Entre une durée valide, égale ou supérieure à zéro.';
+      error.style.display = 'block';
+      return;
+    }
+    let start;
+    const selected = document.querySelector('input[name="start"]:checked').value;
+    if (selected === 'now') {
+      start = new Date(); // read at the moment the user taps Calculate
+    } else {
+      const date = $('startDate').value;
+      const time = $('startTime').value;
+      if (!date || !time) {
+        error.textContent = 'Choisis une date et une heure valides.';
+        error.style.display = 'block'; return;
+      }
+      start = new Date(`${date}T${time}`);
+      if (Number.isNaN(start.getTime())) {
+        error.textContent = 'La date ou l’heure indiquée est invalide.';
+        error.style.display = 'block'; return;
+      }
+    }
+    const factor = $('unit').value === 'minutes' ? 60000 : $('unit').value === 'hours' ? 3600000 : 86400000;
+    const delta = amount * factor * (operation === 'add' ? 1 : -1);
+    const result = new Date(start.getTime() + delta);
+    if (!Number.isFinite(result.getTime())) {
+      error.textContent = 'Cette durée est trop grande pour être calculée.';
+      error.style.display = 'block'; return;
+    }
+    const dateFmt = new Intl.DateTimeFormat('fr-FR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+    const timeFmt = new Intl.DateTimeFormat('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit', hourCycle:'h23' });
+    $('resultDate').textContent = dateFmt.format(result);
+    $('resultTime').textContent = timeFmt.format(result);
+    $('resultMeta').textContent = 'Fuseau horaire de l’iPhone · ' + (operation === 'add' ? 'ajout' : 'déduction') + ' effectué';
+    lastResult = dateFmt.format(result) + ' à ' + timeFmt.format(result);
+    $('result').classList.add('show');
+  }
+  $('calculate').addEventListener('click', calculate);
+  $('copy').addEventListener('click', async () => {
+    if (!lastResult) return;
+    try {
+      await navigator.clipboard.writeText(lastResult);
+      $('copy').textContent = 'Copié !';
+      setTimeout(() => $('copy').textContent = 'Copier le résultat', 1600);
+    } catch (_) {
+      const ta = document.createElement('textarea');
+      ta.value = lastResult; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      $('copy').textContent = 'Copié !';
+      setTimeout(() => $('copy').textContent = 'Copier le résultat', 1600);
+    }
+  });
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  }
+})();
+</script>
+</body>
+</html>
